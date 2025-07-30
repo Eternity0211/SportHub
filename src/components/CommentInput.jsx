@@ -15,7 +15,7 @@ export default function CommentInput({ activityId, onAddComment }) {
       id: Date.now(), // 临时用时间戳当唯一ID
       user: '当前登录用户', // 替换为真实用户名（如从全局状态取）
       content: commentContent,
-      createdAt: new Date().toLocaleDateString() // 格式化当前日期
+      createdAt: new Date().toLocaleDateString(), // 格式化当前日期
     };
 
     // 调用父组件传递的方法，更新评论列表
@@ -30,7 +30,7 @@ export default function CommentInput({ activityId, onAddComment }) {
       {/* 评论输入框 */}
       <textarea
         value={commentContent}
-        onChange={(e) => setCommentContent(e.target.value)}
+        onChange={e => setCommentContent(e.target.value)}
         placeholder="写下你的评论..."
         className="w-full p-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
         rows="3"

@@ -6,12 +6,22 @@ export default function Layout() {
       {/* 导航栏 */}
       <nav className="bg-gray-800 text-white p-4">
         <div className="container mx-auto flex justify-between">
-          <Link to="/" className="text-xl font-bold">SportHub</Link>
+          <Link to="/" className="text-xl font-bold">
+            SportHub
+          </Link>
           <div className="space-x-4">
-            <Link to="/" className="hover:underline">活动列表</Link>
-            <Link to="/manage" className="hover:underline">活动管理</Link>
-            <Link to="/orders" className="hover:underline">订单管理</Link>
-            <Link to="/login" className="hover:underline">登录</Link>
+            <Link to="/" className="hover:underline">
+              活动列表
+            </Link>
+            <Link to="/manage" className="hover:underline">
+              活动管理
+            </Link>
+            <Link to="/orders" className="hover:underline">
+              订单管理
+            </Link>
+            <Link to="/login" className="hover:underline">
+              登录
+            </Link>
           </div>
         </div>
       </nav>

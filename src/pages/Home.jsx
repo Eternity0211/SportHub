@@ -29,7 +29,7 @@ export const activities = [
     status: '需提前 1 天预约',
     duration: '1.5 小时',
     maxPeople: 6,
-    tags: ['网球', '晨练', '教练指导']
+    tags: ['网球', '晨练', '教练指导'],
   },
   {
     id: 3,
@@ -41,7 +41,7 @@ export const activities = [
     status: '满 6 人开团',
     duration: '3 小时',
     maxPeople: 12,
-    tags: ['篮球', '对抗赛', '竞技']
+    tags: ['篮球', '对抗赛', '竞技'],
   },
   {
     id: 4,
@@ -53,7 +53,7 @@ export const activities = [
     status: '限 15 人（需自带瑜伽垫）',
     duration: '1 小时',
     maxPeople: 15,
-    tags: ['瑜伽', '冥想', '户外']
+    tags: ['瑜伽', '冥想', '户外'],
   },
   {
     id: 5,
@@ -65,7 +65,7 @@ export const activities = [
     status: '满 10 人发车',
     duration: '2.5 小时',
     maxPeople: 20,
-    tags: ['飞盘', '团建', '趣味']
+    tags: ['飞盘', '团建', '趣味'],
   },
   {
     id: 6,
@@ -77,7 +77,7 @@ export const activities = [
     status: '每晚 7 点集合',
     duration: '1.5 小时',
     maxPeople: '不限（建议至少 5 人）',
-    tags: ['夜跑', '荧光', '社交']
+    tags: ['夜跑', '荧光', '社交'],
   },
 ];
 
@@ -85,30 +85,33 @@ export default function Home() {
   // 用于存储搜索关键词
   const [searchTerm, setSearchTerm] = useState('');
   // 筛选后的活动列表
-  const [filteredActivities, setFilteredActivities] = useState(activities); 
+  const [filteredActivities, setFilteredActivities] = useState(activities);
 
   // 处理搜索输入变化的函数
-  const handleSearchChange = (e) => {
+  const handleSearchChange = e => {
     const term = e.target.value.toLowerCase(); // 转为小写
     setSearchTerm(term);
 
     // 实时过滤活动（不区分大小写）
-    const filtered = activities.filter((activity) => 
-      activity.title.toLowerCase().includes(term) ||
-      activity.description.toLowerCase().includes(term) ||
-      activity.location.toLowerCase().includes(term) ||
-      (activity.tags?.join(' ').toLowerCase().includes(term) || false)
+    const filtered = activities.filter(
+      activity =>
+        activity.title.toLowerCase().includes(term) ||
+        activity.description.toLowerCase().includes(term) ||
+        activity.location.toLowerCase().includes(term) ||
+        activity.tags?.join(' ').toLowerCase().includes(term) ||
+        false
     );
 
     setFilteredActivities(filtered);
   };
 
-
   return (
     <div className="p-8">
       <div className="flex items-center justify-between mb-6">
         <h1 className="text-3xl font-bold">体育活动室</h1>
-        <div className="w-1/3"> {/* 搜索框占 1/3 宽度，可调整 */}
+        <div className="w-1/3">
+          {' '}
+          {/* 搜索框占 1/3 宽度，可调整 */}
           <input
             type="text"
             placeholder="搜索活动"
@@ -118,12 +121,16 @@ export default function Home() {
           />
         </div>
       </div>
-      
+
       {/* 活动列表（使用过滤后的数据） */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
         {filteredActivities.length > 0 ? (
-          filteredActivities.map((activity) => (
-            <Link key={activity.id} to={`/detail/${activity.id}`} className="no-underline">
+          filteredActivities.map(activity => (
+            <Link
+              key={activity.id}
+              to={`/detail/${activity.id}`}
+              className="no-underline"
+            >
               <ActivityCard activity={activity} />
             </Link>
           ))

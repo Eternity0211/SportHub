@@ -1,9 +1,27 @@
-import { MidwayConfig } from '@midwayjs/core';
+// import { join } from 'path';
 
 export default {
-  // use for cookie sign key, should change to your own and keep security
-  keys: '1751513296532_533',
+  keys: 'your-secret-key',
   koa: {
     port: 7001,
   },
-} as MidwayConfig;
+  jwt: {
+    secret: 'your-secret-key',
+    expiresIn: '1d',
+  },
+  // orm: {
+  //   dataSource: {
+  //     default: {
+  //       type: 'mysql',
+  //       host: 'localhost',
+  //       port: 3306,
+  //       username: 'root',
+  //       password: '060211',
+  //       database: 'sport_hub',
+  //       synchronize: true,
+  //       logging: true,
+  //       entities: [join(__dirname, '../entity/*.entity{.ts,.js}')],
+  //     },
+  //   },
+  // },
+};

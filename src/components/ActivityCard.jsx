@@ -10,7 +10,7 @@ export default function ActivityCard({ activity }) {
           className="w-full h-full object-cover" // 关键：保持比例填充并裁剪
         />
       </div>
-      
+
       {/* 内容区域：固定高度 + 垂直布局 */}
       <div className="p-4 h-48 flex flex-col">
         <h3 className="text-lg font-bold mb-1 line-clamp-1">
@@ -23,7 +23,7 @@ export default function ActivityCard({ activity }) {
         <p className="text-gray-600 text-sm line-clamp-2">
           {activity.description}
         </p>
-        
+
         {/* 底部信息：自动对齐到底部 */}
         <div className="mt-auto flex justify-between items-center text-sm text-gray-500">
           <div className="flex items-center">
