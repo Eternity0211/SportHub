@@ -7,6 +7,7 @@ import yogaImg from '../assets/images/yoga.png';
 import frisbeeImg from '../assets/images/frisbee.png';
 import nightRunImg from '../assets/images/nightRun.png';
 import { useState } from 'react';
+import React from 'react';
 
 // 模拟活动数据（实际对接后端接口）
 export const activities = [

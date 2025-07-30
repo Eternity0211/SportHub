@@ -1,13 +1,10 @@
-import Layout from './components/Layout.jsx'
+import { Outlet } from 'react-router-dom';
+import React from 'react';
 
 export default function App() {
   return (
-    <Layout>
-      <div className="p-8">
-        <h1 className="text-3xl font-bold text-red-500">
-          已恢复 Layout 组件
-        </h1>
-      </div>
-    </Layout>
-  )
+    <div>
+      <Outlet /> {/* 用 Outlet 渲染子路由，不再用 Router */}
+    </div>
+  );
 }

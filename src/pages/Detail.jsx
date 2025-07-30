@@ -1,69 +1,140 @@
-import { useParams } from 'react-router-dom';
+import React, { useState, useEffect } from 'react';
+import { useParams, Link } from 'react-router-dom';
 import CommentInput from '../components/CommentInput';
 import { activities } from './Home';
-import { useState } from 'react';
-
-const comments = [
-  { id: 1, user: '用户A', content: '活动很棒！', createdAt: '2025-07-04' },
-  { id: 2, user: '用户B', content: '环境很好，值得参加！', createdAt: '2025-07-03' },
-  // 更多评论...
-];
+import request from '../utils/axios'; // 引入统一请求封装
 
 export default function Detail() {
   const { id } = useParams();
   const activity = activities.find((item) => item.id === parseInt(id));
   
-  if (!activity) {
-    return <div className="p-8 text-center text-gray-500">活动不存在</div>;
-  }
+  const [enrollStatus, setEnrollStatus] = useState({
+    maxPeople: 0,
+    enrolledCount: 0,
+    isEnrolled: false,
+    isFull: false
+  });
+  const [commentList, setCommentList] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState('');
 
-  // 模拟报名状态（实际应从后端获取）
-  const [enrolledCount, setEnrolledCount] = useState(activity.enrolled || 0); 
-  const [isEnrolled, setIsEnrolled] = useState(false);
-  const [remainingSlots, setRemainingSlots] = useState(
-    activity.maxPeople ? (parseInt(activity.maxPeople) - (activity.enrolled || 0)) : Infinity
-  );
-
-  // 处理报名逻辑
-  const handleEnroll = () => {
-    if (isEnrolled) {
-      // 取消报名
-      setIsEnrolled(false);
-      setEnrolledCount(enrolledCount - 1);
-      setRemainingSlots(remainingSlots + 1);
-      alert('已取消报名');
-    } else {
-      // 检查是否还有名额
-      if (remainingSlots <= 0) {
-        alert('活动名额已满');
-        return;
+  useEffect(() => {
+    const fetchData = async () => {
+      if (!activity) return;
+      try {
+        setLoading(true);
+        // 并行请求（使用统一封装的 request）
+        const [enrollRes, commentRes] = await Promise.all([
+          request.get(`/activities/${activity.id}/enroll-status`),
+          request.get(`/activities/${activity.id}/comments`)
+        ]);
+        
+        setEnrollStatus(enrollRes.data);
+        setCommentList(
+          commentRes.data.sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt))
+        );
+        setError('');
+      } catch (err) {
+        console.error('数据加载失败:', err);
+        setError('加载数据失败，请刷新页面重试');
+      } finally {
+        setLoading(false);
       }
-      // 报名成功
-      setIsEnrolled(true);
-      setEnrolledCount(enrolledCount + 1);
-      setRemainingSlots(remainingSlots - 1);
-      alert('报名成功！');
+    };
+
+    fetchData();
+  }, [activity?.id]);
+
+  // 报名/取消报名逻辑（简化，使用 request）
+  const handleEnroll = async () => {
+    // if (!localStorage.getItem('token')) {
+    //   alert('请先登录再进行报名操作');
+    //   return;
+    // }
+
+    try {
+      if (enrollStatus.isEnrolled) {
+        await request.post(`/activities/${activity.id}/unenroll`);
+        setEnrollStatus((prev) => ({
+          ...prev,
+          isEnrolled: false,
+          enrolledCount: prev.enrolledCount - 1,
+          isFull: prev.enrolledCount - 1 >= prev.maxPeople
+        }));
+        alert('取消报名成功');
+      } else {
+        if (enrollStatus.isFull) {
+          alert('活动名额已满，无法报名');
+          return;
+        }
+        await request.post(`/activities/${activity.id}/enroll`);
+        setEnrollStatus((prev) => ({
+          ...prev,
+          isEnrolled: true,
+          enrolledCount: prev.enrolledCount + 1,
+          isFull: prev.enrolledCount + 1 >= prev.maxPeople
+        }));
+        alert('报名成功！');
+      }
+    } catch (err) {
+      console.error('报名操作失败:', err);
+      alert(err || '操作失败，请重试');
+      fetchEnrollStatus(); // 失败后刷新状态
     }
   };
 
-  const [commentList, setCommentList] = useState([
-    { id: 1, user: '用户A', content: '活动很棒！', createdAt: '2025-07-04' },
-    { id: 2, user: '用户B', content: '环境很好，值得参加！', createdAt: '2025-07-03' },
-  ]);
-
-  const handleAddNewComment = (newComment) => {
-    // 将新评论添加到列表开头（或末尾）
-    setCommentList([newComment, ...commentList]);
+  // 单独拉取报名状态
+  const fetchEnrollStatus = async () => {
+    try {
+      const res = await request.get(`/activities/${activity.id}/enroll-status`);
+      setEnrollStatus(res.data);
+    } catch (err) {
+      console.error('刷新报名状态失败:', err);
+    }
   };
 
+  // 发表评论逻辑（简化，使用 request）
+  const handleAddNewComment = async (newCommentContent) => {
+    // if (!localStorage.getItem('token')) {
+    //   alert('请先登录再发表评论');
+    //   return;
+    // }
+
+    try {
+      const res = await request.post(`/activities/${activity.id}/comments`, {
+        content: newCommentContent,
+      });
+      setCommentList([res.data, ...commentList]);
+    } catch (err) {
+      console.error('发表评论失败:', err);
+      alert(err || '评论发表失败，请重试');
+    }
+  };
+
+  // 活动不存在处理
+  if (!activity) {
+    return <div className="p-8 text-center text-gray-500">活动不存在或已删除</div>;
+  }
+
+  // 加载中状态
+  if (loading) {
+    return <div className="p-8 text-center text-gray-500">加载中...</div>;
+  }
 
   return (
     <div className="p-4 md:p-8 max-w-6xl mx-auto">
-      {/* 面包屑导航 */}
+      {/* 错误提示 */}
+      {error && (
+        <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded mb-6">
+          {error}
+        </div>
+      )}
+
+      {/* 面包屑导航（使用Link优化路由） */}
       <div className="mb-4 text-sm text-gray-500">
-        <a href="/" className="hover:text-blue-500">首页</a>
+        <Link to="/" className="hover:text-blue-500">首页</Link>
         <span className="mx-2">/</span>
-        <a href="/activities" className="hover:text-blue-500">活动列表</a>
+        <Link to="/activities" className="hover:text-blue-500">活动列表</Link>
         <span className="mx-2">/</span>
         <span className="text-gray-700">{activity.title}</span>
       </div>
@@ -115,7 +186,9 @@ export default function Detail() {
                 </div>
                 <div>
                   <h3 className="text-sm text-gray-500">人数限制</h3>
-                  <p className="font-medium">{activity.maxPeople || '无'}</p>
+                  <p className="font-medium">
+                    {activity.maxPeople ? activity.maxPeople : '无限制'}
+                  </p>
                 </div>
               </div>
               
@@ -145,7 +218,7 @@ export default function Detail() {
           {/* 评论区 */}
           <div className="bg-white rounded-xl shadow-md p-6">
             <div className="flex justify-between items-center mb-6">
-              <h2 className="text-xl font-bold">活动评论 ({comments.length})</h2>
+              <h2 className="text-xl font-bold">活动评论 ({commentList.length})</h2>
               <button className="text-blue-500 hover:text-blue-700 text-sm font-medium">
                 查看全部
               </button>
@@ -153,28 +226,34 @@ export default function Detail() {
             
             {/* 评论列表 */}
             <div className="space-y-6">
-              {comments.map((comment) => (
-                <div key={comment.id} className="border-b pb-5">
-                  <div className="flex items-center mb-3">
-                    <img
-                      src={`https://picsum.photos/id/${comment.id + 100}/40/40`}
-                      alt={comment.user}
-                      className="w-10 h-10 rounded-full mr-3"
-                    />
-                    <div>
-                      <h4 className="font-medium">{comment.user}</h4>
-                      <p className="text-xs text-gray-500">{comment.createdAt}</p>
+              {commentList.length > 0 ? (
+                commentList.map((comment) => (
+                  <div key={comment.id} className="border-b pb-5">
+                    <div className="flex items-center mb-3">
+                      <img
+                        src={`https://picsum.photos/id/${comment.id + 100}/40/40`}
+                        alt={comment.user}
+                        className="w-10 h-10 rounded-full mr-3"
+                      />
+                      <div>
+                        <h4 className="font-medium">{comment.user}</h4>
+                        <p className="text-xs text-gray-500">{comment.createdAt}</p>
+                      </div>
                     </div>
+                    <p className="text-gray-700">{comment.content}</p>
                   </div>
-                  <p className="text-gray-700">{comment.content}</p>
+                ))
+              ) : (
+                <div className="text-center py-8 text-gray-500">
+                  暂无评论，快来发表第一条评论吧～
                 </div>
-              ))}
+              )}
             </div>
             
             {/* 发表评论 */}
             <CommentInput 
               activityId={activity.id} 
-              onAddComment={handleAddNewComment} // 关键：将更新方法传给子组件
+              onAddComment={handleAddNewComment} 
             />
           </div>
         </div>
@@ -190,44 +269,55 @@ export default function Detail() {
               </div>
             </div>
             
-            {/* 报名进度 */}
-            {activity.maxPeople && (
-            <div className="mb-6">
-              <div className="flex justify-between text-sm mb-1">
-                <span className="text-gray-500">报名进度</span>
-                <span className="font-medium">
-                  {enrolledCount}/{parseInt(activity.maxPeople)}  {/* 这里改用 enrolledCount */}
-                </span>
+            {/* 报名进度（仅在有最大人数限制时显示） */}
+            {activity.maxPeople > 0 && (
+              <div className="mb-6">
+                <div className="flex justify-between text-sm mb-1">
+                  <span className="text-gray-500">报名进度</span>
+                  <span className="font-medium">
+                    {enrollStatus.enrolledCount}/{enrollStatus.maxPeople}
+                  </span>
+                </div>
+                <div className="w-full bg-gray-200 rounded-full h-2.5">
+                  <div 
+                    className="bg-blue-600 h-2.5 rounded-full transition-all duration-500" 
+                    style={{ 
+                      width: `${(enrollStatus.enrolledCount / enrollStatus.maxPeople) * 100}%` 
+                    }}
+                  ></div>
+                </div>
+                {enrollStatus.isFull ? (
+                  <p className="text-red-600 text-sm mt-1">
+                    <i className="fa fa-times-circle"></i> 名额已满
+                  </p>
+                ) : (
+                  <p className="text-green-600 text-sm mt-1">
+                    <i className="fa fa-check-circle"></i> 
+                    剩余 {enrollStatus.maxPeople - enrollStatus.enrolledCount} 个名额
+                  </p>
+                )}
               </div>
-              <div className="w-full bg-gray-200 rounded-full h-2.5">
-                <div 
-                  className="bg-blue-600 h-2.5 rounded-full" 
-                  style={{ 
-                    width: `${(enrolledCount / parseInt(activity.maxPeople)) * 100}%`  /* 进度条用 enrolledCount 计算 */
-                  }}
-                ></div>
-              </div>
-              {remainingSlots > 0 ? (
-                <p className="text-green-600 text-sm mt-1">
-                  <i className="fa fa-check-circle"></i> 剩余 {remainingSlots} 个名额
-                </p>
-              ) : (
-                <p className="text-red-600 text-sm mt-1">
-                  <i className="fa fa-times-circle"></i> 名额已满
-                </p>
-              )}
-            </div>
-          )}
+            )}
             
-            {/* 报名按钮 */}
+            {/* 报名按钮（根据状态禁用/启用） */}
             <button
               onClick={handleEnroll}
+              disabled={enrollStatus.isFull && !enrollStatus.isEnrolled} // 满员且未报名时禁用
               className={`w-full py-3 rounded-lg font-bold transition-all duration-300 
-                ${isEnrolled ? 'bg-gray-200 text-gray-700 hover:bg-gray-300' : 'bg-red-500 text-white hover:bg-red-600'}`}
+                ${enrollStatus.isEnrolled 
+                  ? 'bg-gray-200 text-gray-700 hover:bg-gray-300' 
+                  : enrollStatus.isFull 
+                    ? 'bg-gray-300 text-gray-500 cursor-not-allowed' 
+                    : 'bg-red-500 text-white hover:bg-red-600'
+                }`}
             >
-              {isEnrolled ? (
+              {enrollStatus.isEnrolled ? (
                 <span>
                   <i className="fa fa-check mr-2"></i> 已报名
+                </span>
+              ) : enrollStatus.isFull ? (
+                <span>
+                  <i className="fa fa-times mr-2"></i> 名额已满
                 </span>
               ) : (
                 <span>
@@ -258,9 +348,9 @@ export default function Detail() {
                 .filter((item) => item.id !== activity.id)
                 .slice(0, 3)
                 .map((recActivity) => (
-                  <a 
+                  <Link 
                     key={recActivity.id}
-                    href={`/detail/${recActivity.id}`} 
+                    to={`/detail/${recActivity.id}`} // 使用Link优化跳转
                     className="flex items-center space-x-3 group hover:bg-gray-50 p-2 rounded-lg transition-colors"
                   >
                     <img
@@ -277,12 +367,11 @@ export default function Detail() {
                       </p>
                       <p className="text-sm text-red-500">¥{recActivity.price}</p>
                     </div>
-                  </a>
+                  </Link>
                 ))}
-            </div>
           </div>
         </div>
       </div>
     </div>
-  );
-}
+  </div>
+)}

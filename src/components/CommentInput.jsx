@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import React from 'react';
 
 export default function CommentInput({ activityId, onAddComment }) {
   const [commentContent, setCommentContent] = useState(''); // 存储输入的评论内容

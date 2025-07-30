@@ -1,4 +1,5 @@
-// ActivityCard.jsx（完整代码）
+import React from 'react';
+
 export default function ActivityCard({ activity }) {
   return (
     <div className="bg-white rounded-lg shadow-md overflow-hidden transition-all duration-300 hover:shadow-lg">
